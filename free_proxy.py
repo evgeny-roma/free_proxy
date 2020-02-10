@@ -126,57 +126,5 @@ class ParseContext(metaclass=ContextSingleton):
         with self.lock:
             self.proxies.append(proxy)
 
-    def get_url(self, item) -> list:
-        """Mine items list `[id, name, link, ..]` from categoty page.
-
-        Parameters
-        ----------
-        cat_list: list
-        List of category data `[out_id, name, parent_id, as_string, url]`.
-
-        Returns
-        -------
-        set
-        Returns list of tuples, each tuple contains `(item_id, item_url, name)`.
-
-        """
-        log.debug(f'{item[0]} {item[1]} getting from `{item[-1]}`...')
-        attempt = 0
-
-        # Request part
-        while attempt < 5:
-            sleep(randint(0, 30)/10)
-            headers = {'User-Agent': self.get_ua()}
-            proxy = self.pop_proxy()
-
-            try:
-                page = get(url=item[-1], proxies={"http": proxy, "https": proxy}, headers=headers, timeout=11)
-                if page.status_code == 200:
-                    log.info(f'{item[0]} {item[1]}: Successful thru proxy: {proxy}')
-
-                    self.push_proxy(proxy)
-                    data = page.text
-                    if data:
-                        return [True, data]
-                    else:
-                        log.warning(f'{item[0]} {item[1]}: Response (`page.text`) is None.')
-                        attempt += 1
-                elif page.status_code in [400, 401, 403, 404]:
-                    log.warning(
-                        f'{item[0]} {item[1]}: Response code {page.status_code}. Bad request, switching proxy...')
-                    attempt += 1
-                else:
-                    log.warning(
-                        f'{item[0]} {item[1]} thru proxy: {proxy}, unknown server response/error ({page.status_code}). Changing proxy...')
-                    attempt += 1
-            except Exception as ex:
-                log.debug(
-                    f'{item[0]} {item[1]}: proxy {proxy} is busy or ParsingError, switching proxy...')
-                log.debug(ex)
-                attempt += 1
-        log.warning(f'{item[0]} {item[1]}: Limit of attempts exeeded! {item[-1]}')
-        return [False, (False, item[0], item[1], 'Failed to connect:', item[-1])]
-
-
 if __name__ == "__main__":
     pass
